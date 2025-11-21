@@ -4,23 +4,26 @@ import { Table } from "./Table";
 import { Form } from "./Form";
 
 export function LeaveForm() {
-  // submit Functionality
-  const [showvalue, setvalue] = useState([]);
   const [showform, setform] = useState(false);
   const [showTable, setTable] = useState(true);
-  // validation storage
   const [errors, setErrors] = useState({});
 
   function applyleave() {
     setform(true);
     setTable(false);
   }
+
   function closeform() {
     setform(false);
     setTable(true);
   }
 
-  //   get form data
+  function homepage() {
+    setform(false);
+    setTable(true);
+  }
+
+  // Get form data
   const [formdata, setformdata] = useState({
     ename: "",
     eid: "",
@@ -31,21 +34,44 @@ export function LeaveForm() {
     edate: "",
     rfleave: "",
   });
+
   function handlechange(e) {
     setformdata({
       ...formdata,
       [e.target.id]: e.target.value,
     });
-    console.log(formdata);
   }
-  // submit
+
+  // Submit
   function handlesubmit(e) {
     e.preventDefault();
-    // validate form
+
+    // Validate form
     if (!validateform()) {
       return;
     }
-    setvalue([...showvalue, formdata]);
+
+    // Get existing leave applications from session storage
+    const existingLeaves = JSON.parse(
+      sessionStorage.getItem("leaveApplications") || "[]"
+    );
+
+    // Add new leave application with pending status
+    const newLeave = {
+      ...formdata,
+      id: Date.now(), // Unique ID for each application
+      status: "pending",
+      reason: "",
+      submittedBy: sessionStorage.getItem("userEmail"),
+      submittedAt: new Date().toISOString(),
+    };
+
+    existingLeaves.push(newLeave);
+
+    // Save back to session storage
+    sessionStorage.setItem("leaveApplications", JSON.stringify(existingLeaves));
+
+    // Reset form
     setformdata({
       ename: "",
       eid: "",
@@ -56,11 +82,13 @@ export function LeaveForm() {
       edate: "",
       rfleave: "",
     });
+
     setTable(true);
     setform(false);
+    alert("Leave application submitted successfully!");
   }
 
-  // form validation
+  // Form validation
   function validateform() {
     const newErrors = {};
     const today = new Date().toISOString().split("T")[0];
@@ -127,20 +155,16 @@ export function LeaveForm() {
 
   return (
     <div>
-      <Navbar applyleave={applyleave} />
+      <Navbar applyleave={applyleave} homepage={homepage} />
       <Form
         showform={showform}
         closeform={closeform}
-        // formdata
         handlechange={handlechange}
-        // form submit
         handlesubmit={handlesubmit}
-        // form value
         formdata={formdata}
-        // validation errors
         errors={errors}
       />
-      <Table showTable={showTable} showvalue={showvalue} />
+      <Table showTable={showTable} />
     </div>
   );
 }
